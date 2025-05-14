@@ -15,7 +15,9 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import tournoi.modele.Equipe;
 import tournoi.modele.Joueur;
 import tournoi.service.GestionnaireTournoi;
@@ -56,16 +58,58 @@ public class InscriptionController implements Initializable {
     @FXML
     private ListView<Joueur> joueursListView;
 
+    @FXML
+    private RadioButton sansEquipeRadio;
+
+    @FXML
+    private RadioButton rejoindreEquipeRadio;
+
+    @FXML
+    private RadioButton creerEquipeRadio;
+
+    @FXML
+    private ToggleGroup optionEquipe;
+
+    @FXML
+    private TextField nomEquipeField;
+
     private GestionnaireTournoi gestionnaire;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         gestionnaire = GestionnaireTournoi.getInstance();
 
-        // Configuration de l'affichage/masquage du ComboBox selon la sélection du CheckBox
-        equipeCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            equipeComboBox.setVisible(newVal);
-            updateEquipeComboBox();
+        // Configuration des options d'équipe avec les boutons radio
+        sansEquipeRadio.setSelected(true);
+
+        // Ajout des écouteurs pour les boutons radio
+        sansEquipeRadio.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                equipeComboBox.setVisible(false);
+                nomEquipeField.setVisible(false);
+            }
+        });
+
+        rejoindreEquipeRadio.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                equipeComboBox.setVisible(true);
+                nomEquipeField.setVisible(false);
+                updateEquipeComboBox();
+            }
+        });
+
+        creerEquipeRadio.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                equipeComboBox.setVisible(false);
+                nomEquipeField.setVisible(true);
+
+                // Vérifier si la limite d'équipes est atteinte
+                if (gestionnaire.getTournoi().getNombreEquipes() >= gestionnaire.getTournoi().getMaxEquipes()) {
+                    showAlert(AlertType.WARNING, "Limite atteinte",
+                            "Le nombre maximum d'équipes (" + gestionnaire.getTournoi().getMaxEquipes() + ") est atteint.");
+                    sansEquipeRadio.setSelected(true);
+                }
+            }
         });
 
         // Configuration de la sélection d'équipe dans la ListView pour afficher ses joueurs
@@ -91,15 +135,28 @@ public class InscriptionController implements Initializable {
                         gestionnaire.getTournoi().getNombreEquipes() + "/" +
                         gestionnaire.getTournoi().getMaxEquipes() + " équipes"
         );
+
+        // Désactiver l'option de création d'équipe si le maximum est atteint
+        if (gestionnaire.getTournoi().getNombreEquipes() >= gestionnaire.getTournoi().getMaxEquipes()) {
+            creerEquipeRadio.setDisable(true);
+        } else {
+            creerEquipeRadio.setDisable(false);
+        }
     }
 
     /**
      * Met à jour la liste déroulante des équipes disponibles
      */
     private void updateEquipeComboBox() {
-        if (equipeCheckBox.isSelected()) {
-            ObservableList<Equipe> equipes = FXCollections.observableArrayList(gestionnaire.getTournoi().getEquipes());
-            equipeComboBox.setItems(equipes);
+        ObservableList<Equipe> equipes = FXCollections.observableArrayList(gestionnaire.getTournoi().getEquipes());
+        equipeComboBox.setItems(equipes);
+
+        // Si aucune équipe n'est disponible, informer l'utilisateur
+        if (equipes.isEmpty()) {
+            showAlert(AlertType.INFORMATION, "Information", "Aucune équipe n'est disponible à rejoindre.");
+            rejoindreEquipeRadio.setDisable(true);
+        } else {
+            rejoindreEquipeRadio.setDisable(false);
         }
     }
 
@@ -132,6 +189,12 @@ public class InscriptionController implements Initializable {
             return;
         }
 
+        // Si l'option "Créer une équipe" est sélectionnée mais aucun nom d'équipe n'est fourni
+        if (creerEquipeRadio.isSelected() && nomEquipeField.getText().isEmpty()) {
+            showAlert(AlertType.ERROR, "Erreur", "Veuillez saisir un nom pour votre équipe");
+            return;
+        }
+
         // Création du joueur
         Joueur joueur = new Joueur(
                 nomField.getText(),
@@ -142,35 +205,55 @@ public class InscriptionController implements Initializable {
         // Valeur par défaut pour la durée d'inscription (5 jours)
         int dureeInscription = 5;
 
-        // Vérifier si le joueur a sélectionné une équipe existante
-        boolean aUneEquipe = equipeCheckBox.isSelected();
-        boolean estCapitaine = false;
+        // Traitement selon l'option sélectionnée
+        ResultatInscription resultat;
 
-        // Si le joueur a une équipe mais n'a pas sélectionné d'équipe existante,
-        // on considère qu'il veut créer une nouvelle équipe dont il sera capitaine
-        if (aUneEquipe && equipeComboBox.getSelectionModel().isEmpty()) {
-            estCapitaine = true;
+        if (sansEquipeRadio.isSelected()) {
+            // Inscription sans équipe
+            resultat = gestionnaire.inscrireJoueur(joueur, false, false, dureeInscription);
+        } else if (rejoindreEquipeRadio.isSelected()) {
+            // Vérifier si une équipe est sélectionnée
+            if (equipeComboBox.getSelectionModel().isEmpty()) {
+                showAlert(AlertType.ERROR, "Erreur", "Veuillez sélectionner une équipe à rejoindre");
+                return;
+            }
+
+            // Rejoindre l'équipe sélectionnée
+            Equipe equipeSelectionnee = equipeComboBox.getSelectionModel().getSelectedItem();
+            equipeSelectionnee.ajouterJoueur(joueur);
+
+            resultat = new ResultatInscription(true, "Vous avez rejoint l'équipe " + equipeSelectionnee.getNom(), null);
+        } else if (creerEquipeRadio.isSelected()) {
+            // Vérifier si le tournoi a atteint le nombre maximum d'équipes
+            if (gestionnaire.getTournoi().getNombreEquipes() >= gestionnaire.getTournoi().getMaxEquipes()) {
+                showAlert(AlertType.ERROR, "Erreur", "Le nombre maximum d'équipes est atteint");
+                return;
+            }
+
+            // Créer une nouvelle équipe avec un nom personnalisé
+            Equipe nouvelleEquipe = new Equipe(nomEquipeField.getText(), joueur, dureeInscription);
+            gestionnaire.getTournoi().ajouterEquipe(nouvelleEquipe);
+
+            resultat = new ResultatInscription(true, "Votre équipe \"" + nomEquipeField.getText() + "\" a été créée avec vous comme capitaine", null);
+        } else {
+            // Ne devrait jamais arriver ici
+            return;
         }
 
-        // Appel au service d'inscription
-        ResultatInscription resultat = gestionnaire.inscrireJoueur(
-                joueur,
-                aUneEquipe,
-                estCapitaine,
-                dureeInscription
-        );
-
         // Affichage du résultat
-        if (resultat.isSucces()) {
-            showAlert(AlertType.INFORMATION, "Succès", resultat.getMessage());
-            clearFields();
-        } else {
-            showAlert(AlertType.WARNING, "Attention", resultat.getMessage());
+        if (resultat != null) {
+            if (resultat.isSucces()) {
+                showAlert(AlertType.INFORMATION, "Succès", resultat.getMessage());
+                clearFields();
+            } else {
+                showAlert(AlertType.WARNING, "Attention", resultat.getMessage());
+            }
         }
 
         // Mise à jour des informations et des listes
         updateTournoiInfo();
         updateEquipesListView();
+        updateEquipeComboBox();
     }
 
     /**
@@ -208,8 +291,10 @@ public class InscriptionController implements Initializable {
         nomField.clear();
         prenomField.clear();
         usernameField.clear();
-        equipeCheckBox.setSelected(false);
+        sansEquipeRadio.setSelected(true);
         equipeComboBox.getSelectionModel().clearSelection();
         equipeComboBox.setVisible(false);
+        nomEquipeField.clear();
+        nomEquipeField.setVisible(false);
     }
 }

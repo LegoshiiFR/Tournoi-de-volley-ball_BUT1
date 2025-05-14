@@ -1,0 +1,76 @@
+.root {
+    -fx-background-color: #f4f4f4;
+    -fx-font-family: "Segoe UI", sans-serif;
+}
+
+.label {
+    -fx-text-fill: #333;
+}
+
+.label.title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-padding: 20px 0 10px 0;
+}
+
+.label.subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #666;
+    -fx-padding: 0 0 10px 0;
+}
+
+.separator {
+    -fx-border-color: #ddd;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 10px 0;
+}
+
+.text-field {
+    -fx-border-radius: 5px;
+    -fx-border-color: #ccc;
+    -fx-background-color: white;
+    -fx-padding: 8px;
+}
+
+.radio-button {
+    -fx-padding: 5px 0;
+    -fx-text-fill: #333;
+}
+
+.combo-box {
+    -fx-border-radius: 5px;
+    -fx-border-color: #ccc;
+    -fx-background-color: white;
+}
+
+.button {
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 10px 20px;
+    -fx-border-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #0056b3;
+}
+
+.list-view {
+    -fx-border-color: #ccc;
+    -fx-border-radius: 5px;
+    -fx-background-color: white;
+}
+
+.list-view .list-cell {
+    -fx-padding: 8px;
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #f9f9f9;
+}
+
+.list-view .list-cell:selected {
+    -fx-background-color: #e1f5fe;
+    -fx-text-fill: #007bff;
+}
