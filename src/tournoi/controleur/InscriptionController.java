@@ -3,6 +3,8 @@ package tournoi.controleur;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -10,9 +12,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import tournoi.modele.Equipe;
 import tournoi.modele.Joueur;
 import tournoi.service.GestionnaireTournoi;
 import tournoi.service.ResultatInscription;
@@ -35,19 +39,22 @@ public class InscriptionController implements Initializable {
     private CheckBox equipeCheckBox;
 
     @FXML
-    private CheckBox capitaineCheckBox;
-
-    @FXML
-    private Slider dureeSlider;
-
-    @FXML
-    private Label dureeLabel;
+    private ComboBox<Equipe> equipeComboBox;
 
     @FXML
     private Button inscrireButton;
 
     @FXML
+    private Button refreshButton;
+
+    @FXML
     private Label infoTournoiLabel;
+
+    @FXML
+    private ListView<Equipe> equipesListView;
+
+    @FXML
+    private ListView<Joueur> joueursListView;
 
     private GestionnaireTournoi gestionnaire;
 
@@ -55,22 +62,24 @@ public class InscriptionController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         gestionnaire = GestionnaireTournoi.getInstance();
 
-        // Configuration de l'affichage de la durée
-        dureeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            int jours = newVal.intValue();
-            dureeLabel.setText(jours + " jour" + (jours > 1 ? "s" : ""));
+        // Configuration de l'affichage/masquage du ComboBox selon la sélection du CheckBox
+        equipeCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            equipeComboBox.setVisible(newVal);
+            updateEquipeComboBox();
         });
 
-        // Par défaut, si l'utilisateur n'a pas d'équipe, il ne peut pas être capitaine
-        equipeCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            capitaineCheckBox.setDisable(!newVal);
-            if (!newVal) {
-                capitaineCheckBox.setSelected(false);
+        // Configuration de la sélection d'équipe dans la ListView pour afficher ses joueurs
+        equipesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldEquipe, newEquipe) -> {
+            if (newEquipe != null) {
+                updateJoueursListView(newEquipe);
+            } else {
+                joueursListView.getItems().clear();
             }
         });
 
-        // Affichage des informations du tournoi
+        // Affichage initial des informations du tournoi et des équipes
         updateTournoiInfo();
+        updateEquipesListView();
     }
 
     /**
@@ -82,6 +91,33 @@ public class InscriptionController implements Initializable {
                         gestionnaire.getTournoi().getNombreEquipes() + "/" +
                         gestionnaire.getTournoi().getMaxEquipes() + " équipes"
         );
+    }
+
+    /**
+     * Met à jour la liste déroulante des équipes disponibles
+     */
+    private void updateEquipeComboBox() {
+        if (equipeCheckBox.isSelected()) {
+            ObservableList<Equipe> equipes = FXCollections.observableArrayList(gestionnaire.getTournoi().getEquipes());
+            equipeComboBox.setItems(equipes);
+        }
+    }
+
+    /**
+     * Met à jour la liste des équipes dans la ListView
+     */
+    private void updateEquipesListView() {
+        ObservableList<Equipe> equipes = FXCollections.observableArrayList(gestionnaire.getTournoi().getEquipes());
+        equipesListView.setItems(equipes);
+    }
+
+    /**
+     * Met à jour la liste des joueurs d'une équipe sélectionnée
+     * @param equipe L'équipe dont on veut afficher les joueurs
+     */
+    private void updateJoueursListView(Equipe equipe) {
+        ObservableList<Joueur> joueurs = FXCollections.observableArrayList(equipe.getJoueurs());
+        joueursListView.setItems(joueurs);
     }
 
     /**
@@ -103,12 +139,25 @@ public class InscriptionController implements Initializable {
                 usernameField.getText()
         );
 
+        // Valeur par défaut pour la durée d'inscription (5 jours)
+        int dureeInscription = 5;
+
+        // Vérifier si le joueur a sélectionné une équipe existante
+        boolean aUneEquipe = equipeCheckBox.isSelected();
+        boolean estCapitaine = false;
+
+        // Si le joueur a une équipe mais n'a pas sélectionné d'équipe existante,
+        // on considère qu'il veut créer une nouvelle équipe dont il sera capitaine
+        if (aUneEquipe && equipeComboBox.getSelectionModel().isEmpty()) {
+            estCapitaine = true;
+        }
+
         // Appel au service d'inscription
         ResultatInscription resultat = gestionnaire.inscrireJoueur(
                 joueur,
-                equipeCheckBox.isSelected(),
-                capitaineCheckBox.isSelected(),
-                (int) dureeSlider.getValue()
+                aUneEquipe,
+                estCapitaine,
+                dureeInscription
         );
 
         // Affichage du résultat
@@ -119,8 +168,23 @@ public class InscriptionController implements Initializable {
             showAlert(AlertType.WARNING, "Attention", resultat.getMessage());
         }
 
-        // Mise à jour des informations du tournoi
+        // Mise à jour des informations et des listes
         updateTournoiInfo();
+        updateEquipesListView();
+    }
+
+    /**
+     * Gère l'action du bouton de rafraîchissement
+     * @param event Événement du bouton
+     */
+    @FXML
+    void handleRefresh(ActionEvent event) {
+        updateTournoiInfo();
+        updateEquipesListView();
+        updateEquipeComboBox();
+
+        // Effacer la sélection actuelle de joueurs
+        joueursListView.getItems().clear();
     }
 
     /**
@@ -145,7 +209,7 @@ public class InscriptionController implements Initializable {
         prenomField.clear();
         usernameField.clear();
         equipeCheckBox.setSelected(false);
-        capitaineCheckBox.setSelected(false);
-        dureeSlider.setValue(1);
+        equipeComboBox.getSelectionModel().clearSelection();
+        equipeComboBox.setVisible(false);
     }
 }

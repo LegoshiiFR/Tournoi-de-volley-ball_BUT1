@@ -3,9 +3,10 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -15,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tournoi.controleur.InscriptionController">
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tournoi.controleur.InscriptionController">
     <top>
         <VBox alignment="CENTER" BorderPane.alignment="CENTER">
             <children>
@@ -43,56 +44,76 @@
             </children>
         </VBox>
     </top>
-    <center>
-        <GridPane hgap="10.0" vgap="15.0" BorderPane.alignment="CENTER">
-            <columnConstraints>
-                <ColumnConstraints hgrow="NEVER" minWidth="10.0" prefWidth="150.0" />
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            </rowConstraints>
-            <children>
-                <Label text="Nom :" />
-                <Label text="Prénom :" GridPane.rowIndex="1" />
-                <Label text="Nom d'utilisateur :" GridPane.rowIndex="2" />
-                <Label text="A-t-il une équipe ?" GridPane.rowIndex="3" />
-                <Label text="Est-il capitaine ?" GridPane.rowIndex="4" />
-                <Label text="Durée d'inscription :" GridPane.rowIndex="5" />
-                <TextField fx:id="nomField" GridPane.columnIndex="1" />
-                <TextField fx:id="prenomField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                <CheckBox fx:id="equipeCheckBox" mnemonicParsing="false" text="Oui" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                <CheckBox fx:id="capitaineCheckBox" disable="true" mnemonicParsing="false" text="Oui" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
-                    <children>
-                        <Slider fx:id="dureeSlider" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" min="1.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" HBox.hgrow="ALWAYS" />
-                        <Label fx:id="dureeLabel" text="1 jour" />
-                    </children>
-                </HBox>
-            </children>
+    <left>
+        <VBox spacing="20.0" BorderPane.alignment="CENTER">
             <BorderPane.margin>
                 <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
             </BorderPane.margin>
-        </GridPane>
-    </center>
-    <bottom>
-        <HBox alignment="CENTER" spacing="20.0" BorderPane.alignment="CENTER">
             <children>
-                <Button fx:id="inscrireButton" defaultButton="true" mnemonicParsing="false" onAction="#handleInscription" prefHeight="40.0" prefWidth="150.0" text="S'inscrire">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Button>
+                <GridPane hgap="10.0" vgap="15.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="NEVER" minWidth="10.0" prefWidth="150.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                    <children>
+                        <Label text="Nom :" />
+                        <Label text="Prénom :" GridPane.rowIndex="1" />
+                        <Label text="Nom d'utilisateur :" GridPane.rowIndex="2" />
+                        <Label text="A-t-il une équipe ?" GridPane.rowIndex="3" />
+                        <TextField fx:id="nomField" GridPane.columnIndex="1" />
+                        <TextField fx:id="prenomField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                        <CheckBox fx:id="equipeCheckBox" mnemonicParsing="false" text="Oui" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <ComboBox fx:id="equipeComboBox" prefWidth="200.0" promptText="Sélectionner une équipe" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                    </children>
+                </GridPane>
+                <HBox alignment="CENTER" spacing="20.0">
+                    <children>
+                        <Button fx:id="inscrireButton" defaultButton="true" mnemonicParsing="false" onAction="#handleInscription" prefHeight="40.0" prefWidth="150.0" text="S'inscrire">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Button>
+                    </children>
+                </HBox>
             </children>
-            <BorderPane.margin>
-                <Insets bottom="20.0" left="20.0" right="20.0" top="10.0" />
-            </BorderPane.margin>
-        </HBox>
-    </bottom>
+        </VBox>
+    </left>
+    <center>
+        <VBox spacing="10.0" BorderPane.alignment="CENTER">
+            <children>
+                <Label text="Équipes inscrites">
+                    <font>
+                        <Font name="System Bold" size="16.0" />
+                    </font>
+                </Label>
+                <ListView fx:id="equipesListView" prefHeight="200.0" />
+                <Label text="Joueurs de l'équipe sélectionnée">
+                    <font>
+                        <Font name="System Bold" size="16.0" />
+                    </font>
+                </Label>
+                <ListView fx:id="joueursListView" prefHeight="200.0" />
+                <HBox alignment="CENTER_RIGHT">
+                    <children>
+                        <Button fx:id="refreshButton" mnemonicParsing="false" onAction="#handleRefresh" text="Rafraîchir la page">
+                            <HBox.margin>
+                                <Insets top="10.0" />
+                            </HBox.margin>
+                        </Button>
+                    </children>
+                </HBox>
+            </children>
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+        </VBox>
+    </center>
 </BorderPane>

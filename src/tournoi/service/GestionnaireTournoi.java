@@ -58,29 +58,29 @@ public class GestionnaireTournoi {
             return new ResultatInscription(false, "Le nom d'utilisateur ne doit pas contenir de chiffres", TypeResultat.MESSAGE_ERREUR);
         }
 
+        // Vérification du nombre maximum d'équipes
+        if (tournoi.estComplet()) {
+            return new ResultatInscription(false, "Le tournoi a atteint le nombre maximum d'équipes", TypeResultat.PAS_DE_PLACE);
+        }
+
         // Le joueur a-t-il une équipe ?
         if (aUneEquipe) {
-            // Son équipe est-elle remplie ?
-            Equipe nouvelleEquipe = new Equipe("Équipe de " + joueur.getNom(), joueur, dureeInscription);
-
             if (capitaine) {
-                // Vérification du nombre d'équipes
-                if (tournoi.getNombreEquipes() < tournoi.getMaxEquipes()) {
-                    tournoi.ajouterEquipe(nouvelleEquipe);
+                // Création d'une nouvelle équipe avec le joueur comme capitaine
+                Equipe nouvelleEquipe = new Equipe("Équipe de " + joueur.getNom(), joueur, dureeInscription);
+                boolean ajoutReussi = tournoi.ajouterEquipe(nouvelleEquipe);
+
+                if (ajoutReussi) {
                     return new ResultatInscription(true, "Votre équipe a été inscrite pour " + dureeInscription + " jours", TypeResultat.INSCRIPTION_EQUIPE);
                 } else {
-                    return new ResultatInscription(false, "Il n'y a plus de place dans le tournoi", TypeResultat.PAS_DE_PLACE);
+                    return new ResultatInscription(false, "Erreur lors de l'ajout de l'équipe", TypeResultat.MESSAGE_ERREUR);
                 }
             } else {
-                // Création d'une nouvelle équipe avec le joueur comme membre
-                if (tournoi.getNombreEquipes() < tournoi.getMaxEquipes()) {
-                    return new ResultatInscription(true, "Une nouvelle équipe est créée avec vous comme joueur", TypeResultat.NOUVELLE_EQUIPE);
-                } else {
-                    return new ResultatInscription(false, "Il n'y a plus de place dans le tournoi", TypeResultat.PAS_DE_PLACE);
-                }
+                // Rejoindre une équipe existante - à implémenter dans le contrôleur
+                return new ResultatInscription(false, "Veuillez sélectionner une équipe à rejoindre", TypeResultat.MESSAGE_ERREUR);
             }
         } else {
-            // Une équipe a de la place ?
+            // Le joueur n'a pas d'équipe, on cherche une équipe disponible
             boolean equipeDisponible = false;
             for (Equipe equipe : tournoi.getEquipes()) {
                 if (!equipe.estComplete()) {
@@ -91,17 +91,43 @@ public class GestionnaireTournoi {
             }
 
             if (!equipeDisponible) {
-                // Création d'une nouvelle équipe avec le joueur comme membre
-                if (tournoi.getNombreEquipes() < tournoi.getMaxEquipes()) {
-                    return new ResultatInscription(true, "Une nouvelle équipe est créée avec vous comme joueur", TypeResultat.NOUVELLE_EQUIPE);
+                // Pas d'équipe disponible, création d'une nouvelle équipe avec le joueur comme capitaine
+                Equipe nouvelleEquipe = new Equipe("Équipe de " + joueur.getNom(), joueur, dureeInscription);
+
+                // CORRECTION: On ajoute toujours l'équipe, sans vérifier la parité du nombre d'équipes
+                boolean ajoutReussi = tournoi.ajouterEquipe(nouvelleEquipe);
+
+                if (ajoutReussi) {
+                    return new ResultatInscription(true, "Aucune équipe disponible, une nouvelle équipe a été créée avec vous comme capitaine", TypeResultat.NOUVELLE_EQUIPE);
                 } else {
-                    return new ResultatInscription(false, "Il n'y a plus de place dans le tournoi", TypeResultat.PAS_DE_PLACE);
+                    return new ResultatInscription(false, "Erreur lors de la création d'une nouvelle équipe", TypeResultat.MESSAGE_ERREUR);
                 }
             }
         }
 
         // Ne devrait jamais arriver ici
         return new ResultatInscription(false, "Une erreur est survenue lors de l'inscription", TypeResultat.MESSAGE_ERREUR);
+    }
+
+    /**
+     * Vérifie et traite les équipes en attente
+     * @return true si des équipes ont été traitées
+     */
+    public boolean traiterEquipesEnAttente() {
+        if (equipesEnAttente.isEmpty()) {
+            return false;
+        }
+
+        // Si on a deux équipes en attente, on peut les ajouter car elles formeront un nombre pair
+        if (equipesEnAttente.size() >= 2) {
+            for (int i = 0; i < 2; i++) {
+                Equipe equipe = equipesEnAttente.remove(0);
+                tournoi.ajouterEquipe(equipe);
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public Tournoi getTournoi() {
